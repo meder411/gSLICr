@@ -28,6 +28,8 @@ __global__ void Finalize_Reduction_Result_device(const spixel_info* accum_map, s
 
 __global__ void Draw_Segmentation_Result_device(const int* idx_img, Vector4u* sourceimg, Vector4u* outimg, Vector2i img_size);
 
+__global__ void Draw_Boundary_Only_device(const int* idx_img, Vector4u* sourceimg, Vector4u* outimg, Vector2i img_size);
+
 // ----------------------------------------------------
 //
 //	host function implementations
@@ -85,6 +87,7 @@ seg_engine_GPU::seg_engine_GPU(const settings& in_settings) : seg_engine(in_sett
 gSLICr::engines::seg_engine_GPU::~seg_engine_GPU()
 {
 	delete accum_map;
+	delete tmp_idx_img;
 }
 
 
@@ -180,6 +183,21 @@ void gSLICr::engines::seg_engine_GPU::Draw_Segmentation_Result(UChar4Image* out_
 	out_img->UpdateHostFromDevice();
 }
 
+void gSLICr::engines::seg_engine_GPU::Draw_Boundary_Only(UChar4Image* out_img)
+{
+	Vector4u* inimg_ptr = source_img->GetData(MEMORYDEVICE_CUDA);
+	Vector4u* outimg_ptr = out_img->GetData(MEMORYDEVICE_CUDA);
+	int* idx_img_ptr = idx_img->GetData(MEMORYDEVICE_CUDA);
+	
+	Vector2i img_size = idx_img->noDims;
+
+	dim3 blockSize(BLOCK_DIM, BLOCK_DIM);
+	dim3 gridSize((int)ceil((float)img_size.x / (float)blockSize.x), (int)ceil((float)img_size.y / (float)blockSize.y));
+
+	Draw_Boundary_Only_device<<<gridSize,blockSize>>>(idx_img_ptr, inimg_ptr, outimg_ptr, img_size);
+	out_img->UpdateHostFromDevice();
+}
+
 
 
 // ----------------------------------------------------
@@ -203,6 +221,14 @@ __global__ void Draw_Segmentation_Result_device(const int* idx_img, Vector4u* so
 	if (x == 0 || y == 0 || x > img_size.x - 2 || y > img_size.y - 2) return;
 
 	draw_superpixel_boundry_shared(idx_img, sourceimg, outimg, img_size, x, y);
+}
+
+__global__ void Draw_Boundary_Only_device(const int* idx_img, Vector4u* sourceimg, Vector4u* outimg, Vector2i img_size)
+{
+	int x = threadIdx.x + blockIdx.x * blockDim.x, y = threadIdx.y + blockIdx.y * blockDim.y;
+	if (x == 0 || y == 0 || x > img_size.x - 2 || y > img_size.y - 2) return;
+
+	draw_boundary_only_shared(idx_img, sourceimg, outimg, img_size, x, y);
 }
 
 __global__ void Init_Cluster_Centers_device(const Vector4f* inimg, spixel_info* out_spixel, Vector2i map_size, Vector2i img_size, int spixel_size)

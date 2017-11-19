@@ -28,6 +28,7 @@ namespace gSLICr
 			~seg_engine_GPU();
 
 			void Draw_Segmentation_Result(UChar4Image* out_img);
+			void Draw_Boundary_Only(UChar4Image* out_img);
 		};
 	}
 }
