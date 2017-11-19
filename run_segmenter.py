@@ -2,7 +2,7 @@ import os.path as osp
 import os
 import argparse
 
-PROJECT_BIN_DIR = '/data/deep_slic/gslicr/bin'
+PROJECT_BIN_DIR = '/path/to/bin'
 
 ######################
 # PARSE ARGUMENTS
