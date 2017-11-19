@@ -2,7 +2,7 @@ import os.path as osp
 import os
 import argparse
 
-PROJECT_BIN_DIR = '/path/to/bin'
+PROJECT_BIN_DIR = 'bin'
 
 ######################
 # PARSE ARGUMENTS
